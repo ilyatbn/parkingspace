@@ -1,0 +1,196 @@
+:root {
+    --bg-color: #ffffff;
+    --text-color: #333333;
+    --secondary-text-color: #666666;
+    --hover-bg: #f5f5f5;
+    --border-color: #e0e0e0;
+    --accent-color: #4CAF50;
+    --input-bg: #ffffff;
+    --input-border: #cccccc;
+    --selected-bg: #e8f5e9;
+    --selected-border: #4CAF50;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-color: #1e1e1e;
+        --text-color: #e0e0e0;
+        --secondary-text-color: #aaaaaa;
+        --hover-bg: #2c2c2c;
+        --border-color: #444444;
+        --accent-color: #81c784;
+        --input-bg: #2c2c2c;
+        --input-border: #555555;
+        --selected-bg: #1b5e20;
+        --selected-border: #81c784;
+    }
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    width: 350px;
+    height: 480px;
+    overflow: hidden;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.search-bar {
+    padding: 10px;
+    background-color: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+#searchInput {
+    flex: 1;
+    /* Take remaining space */
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--input-border);
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    box-sizing: border-box;
+    font-size: 14px;
+    outline: none;
+}
+
+#searchInput:focus {
+    border-color: var(--accent-color);
+}
+
+.parking-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+}
+
+.parking-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.parking-item:hover {
+    background-color: var(--hover-bg);
+}
+
+.parking-item.selected {
+    background-color: var(--selected-bg);
+    border-left: 4px solid var(--selected-border);
+}
+
+.parking-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.parking-name {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+.parking-address {
+    font-size: 12px;
+    color: var(--secondary-text-color);
+}
+
+.parking-count {
+    font-weight: bold;
+    font-size: 14px;
+    color: var(--accent-color);
+    background-color: rgba(76, 175, 80, 0.1);
+    padding: 4px 8px;
+    border-radius: 12px;
+}
+
+.message {
+    padding: 20px;
+    text-align: center;
+    color: var(--secondary-text-color);
+}
+
+.hidden {
+    display: none !important;
+}
+
+#refreshBtn,
+#statsBtn,
+#backBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--secondary-text-color);
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    /* Center SVG */
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+#refreshBtn:hover,
+#statsBtn:hover,
+#backBtn:hover {
+    background-color: var(--hover-bg);
+    color: var(--text-color);
+}
+
+/* Stats View */
+.stats-view {
+    position: absolute;
+    top: 50px;
+    /* Below search bar approx */
+    left: 0;
+    width: 100%;
+    height: calc(100% - 50px);
+    background-color: var(--bg-color);
+    display: flex;
+    flex-direction: column;
+    z-index: 20;
+}
+
+.stats-header {
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: bold;
+}
+
+.chart-container {
+    padding: 10px;
+    flex: 1;
+    position: relative;
+    /* Chart.js needs a container with relative position */
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    100% {
+        transform: rotate(360deg);
+    }
+}

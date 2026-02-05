@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="popup.css">
+    <title>Central Park Parking</title>
+</head>
+
+<body>
+    <div class="container">
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search parking...">
+            <button id="refreshBtn" title="Refresh Data">
+                <!-- Simple SVG Icon for Refresh -->
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 4v6h-6"></path>
+                    <path d="M1 20v-6h6"></path>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+            </button>
+            <button id="statsBtn" title="View Statistics">
+                <!-- Simple SVG Icon for Stats (Bar Chart) -->
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+            </button>
+        </div>
+        <div id="parkingList" class="parking-list">
+            <!-- Items will be injected here -->
+        </div>
+
+        <div id="statsView" class="stats-view hidden">
+            <div class="stats-header">
+                <button id="backBtn" title="Back to List">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                </button>
+                <span>Statistics</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="parkingChart"></canvas>
+            </div>
+            <p id="statsMessage" class="message hidden"></p>
+        </div>
+
+        <div id="message" class="message hidden"></div>
+    </div>
+    <script src="libs/chart.js"></script>
+    <script src="popup.js"></script>
+</body>
+
+</html>
