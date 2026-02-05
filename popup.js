@@ -35,13 +35,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Stats Navigation
+    const daySelect = document.getElementById('daySelect');
+    const metricSelect = document.getElementById('metricSelect');
+
     statsBtn.addEventListener('click', () => {
+        // Set default day to today
+        const today = new Date().getDay();
+        daySelect.value = today.toString();
         showStats();
     });
 
     backBtn.addEventListener('click', () => {
         statsView.classList.add('hidden');
     });
+
+    daySelect.addEventListener('change', renderChart);
+    metricSelect.addEventListener('change', renderChart);
 
     function loadData() {
         chrome.storage.local.get(['parkingLots', 'selectedLot'], (result) => {
@@ -134,25 +143,70 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function renderChart() {
-        const data = await chrome.storage.local.get(['parkingHistory', 'selectedLot']);
-        const history = data.parkingHistory || [];
+        const selectedDay = daySelect.value;
+        const selectedMetric = metricSelect.value;
+        const key = `historyStats${selectedDay}`;
+
+        const data = await chrome.storage.local.get([key, 'selectedLot']);
+        const dayStats = data[key] || {};
         const selectedName = data.selectedLot || "Unknown";
 
-        // Filter history for currently selected lot
-        const lotHistory = history.filter(h => h.lotName === selectedName);
+        // We need 24 data points for hours 0-23
+        const hours = Array.from({ length: 24 }, (_, i) => i);
+        const labels = hours.map(h => `${h.toString().padStart(2, '0')}:00`);
+        const dataPoints = [];
 
-        if (lotHistory.length === 0) {
-            statsMessage.textContent = "No history available for " + selectedName;
+        let hasData = false;
+
+        for (let i = 0; i < 24; i++) {
+            const hourSamples = dayStats[i] || [];
+            // Filter samples for the selected lot
+            const lotSamples = hourSamples.filter(s => s.lotName === selectedName);
+
+            if (lotSamples.length === 0) {
+                dataPoints.push(null); // Or 0? null breaks the bar line, usually good to show no data. But for bar chart 0 is ok if we want to show 'empty'. Let's use 0 or null.
+                // If we use null, bar chart just shows nothing there.
+                continue;
+            }
+            hasData = true;
+
+            const values = lotSamples.map(s => s.spaces);
+            let val;
+
+            if (selectedMetric === 'max') {
+                val = Math.max(...values);
+            } else if (selectedMetric === 'min') {
+                val = Math.min(...values);
+            } else {
+                // Average
+                const sum = values.reduce((a, b) => a + b, 0);
+                val = Math.round(sum / values.length); // Integer average
+            }
+            dataPoints[i] = val; // Assign to correct index (sparse array or fill others with null/0)
+        }
+
+        // Fill empty slots with 0 or skip? Chart.js handles sparse arrays.
+        // Let's ensure dataPoints has 24 entries
+        for (let i = 0; i < 24; i++) {
+            if (dataPoints[i] === undefined) dataPoints[i] = 0; // Use 0 for better visual continuity on bar chart, or null?
+            // If I use 0, it implies "0 free spaces" which is RED. 
+            // We should distinguish "No Data" vs "0 Spaces".
+            // Chart.js skips 'null'.
+        }
+
+        // However, if we put null, the bar is missing.
+        // If we want to indicate "no data", missing bar is correct.
+
+        if (!hasData) {
+            statsMessage.textContent = `No history specific to ${selectedName} for this day.`;
             statsMessage.classList.remove('hidden');
             if (parkingChart) parkingChart.destroy();
             return;
         }
         statsMessage.classList.add('hidden');
 
-        // Prepare data for Chart.js
-        const labels = lotHistory.map(h => new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-        const dataPoints = lotHistory.map(h => h.spaces);
         const backgroundColors = dataPoints.map(val => {
+            if (val === null || val === undefined) return '#ccc'; // Should not happen if we filter nulls
             if (val === 0) return '#F44336';
             if (val < 20) return '#FF9800';
             if (val < 30) return '#FFEB3B';
@@ -170,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Free Spaces',
+                    label: `Free Spaces (${selectedMetric})`,
                     data: dataPoints,
                     backgroundColor: backgroundColors,
                     borderWidth: 1
@@ -191,7 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 plugins: {
                     title: {
                         display: true,
-                        text: 'History for ' + selectedName
+                        text: `${selectedName} - ${daySelect.options[daySelect.selectedIndex].text}`
                     },
                     legend: {
                         display: false

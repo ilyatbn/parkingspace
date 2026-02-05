@@ -120,22 +120,14 @@ async function updateBadge() {
 // History Handling
 async function saveHistory() {
     try {
-        const data = await chrome.storage.local.get(['selectedLot', 'parkingLots', 'parkingHistory', 'lastSavedHistory']);
+        const data = await chrome.storage.local.get(['selectedLot', 'parkingLots', 'lastSavedHistory']);
         const now = Date.now();
+        const dateObj = new Date(now);
+        const dayOfWeek = dateObj.getDay(); // 0-6
+        const hour = dateObj.getHours(); // 0-23
         const thirtyMinutes = 30 * 60 * 1000;
 
-        // Check if 30 minutes have passed since last save, or if never saved
-        // We also want to align roughly to xx:00 and xx:30 if possible, but the requirement basically implies 
-        // "store ... every 30 minutes". The simplest robust way is just checking the interval.
-        // User said: "specifically on xx:00 and xx:30". 
-        // To strictly follow "specifically on xx:00 and xx:30", we might need to check the current minute?
-        // But the user also said "if it doesnt exist, update the data... this will also fix any issues".
-        // Let's stick to the interval check as primary, but maybe we can just save if it's been > 30 mins.
-        // Or strictly: if (now - lastSaved >= 30mins)
-
-        // Let's implement the interval check as requested in the second prompt:
-        // "check if its been more than 30 minutes since lastSavedHistory"
-
+        // Check if 30 minutes have passed since last save
         let shouldSave = false;
         if (!data.lastSavedHistory) {
             shouldSave = true;
@@ -156,19 +148,28 @@ async function saveHistory() {
                         lotName: data.selectedLot
                     };
 
-                    let history = data.parkingHistory || [];
-                    history.push(historyItem);
+                    const key = `historyStats${dayOfWeek}`;
+                    const storageResult = await chrome.storage.local.get([key]);
+                    let dayStats = storageResult[key] || {};
 
-                    // Limit to 1500
-                    if (history.length > 1500) {
-                        history.shift();
+                    // Ensure hour bucket exists
+                    if (!dayStats[hour]) {
+                        dayStats[hour] = [];
+                    }
+
+                    // Add new item
+                    dayStats[hour].push(historyItem);
+
+                    // Keep max 8 samples per hour
+                    if (dayStats[hour].length > 8) {
+                        dayStats[hour].shift(); // Remove oldest
                     }
 
                     await chrome.storage.local.set({
-                        parkingHistory: history,
+                        [key]: dayStats,
                         lastSavedHistory: now
                     });
-                    console.log("History saved:", historyItem);
+                    console.log(`History saved for day ${dayOfWeek}, hour ${hour}:`, historyItem);
                 }
             }
         }

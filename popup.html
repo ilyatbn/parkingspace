@@ -44,7 +44,22 @@
                         <polyline points="12 19 5 12 12 5"></polyline>
                     </svg>
                 </button>
-                <span>Statistics</span>
+                <div class="stats-controls">
+                    <select id="daySelect" title="Select Day">
+                        <option value="0">Sunday</option>
+                        <option value="1">Monday</option>
+                        <option value="2">Tuesday</option>
+                        <option value="3">Wednesday</option>
+                        <option value="4">Thursday</option>
+                        <option value="5">Friday</option>
+                        <option value="6">Saturday</option>
+                    </select>
+                    <select id="metricSelect" title="Select Metric">
+                        <option value="avg">Avg</option>
+                        <option value="min">Min</option>
+                        <option value="max">Max</option>
+                    </select>
+                </div>
             </div>
             <div class="chart-container">
                 <canvas id="parkingChart"></canvas>
