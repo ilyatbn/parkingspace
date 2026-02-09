@@ -152,13 +152,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedPeriod = periodSelect.value;
 
         // Determine keys to fetch
-        // If Night, we need selectedDay (20-23) and (selectedDay + 1) (00-07)
-        // If Day, we need selectedDay (08-19)
         const currentDayKey = `historyStats${selectedDay}`;
         const nextDayIndex = (selectedDay + 1) % 7;
         const nextDayKey = `historyStats${nextDayIndex}`;
 
-        const keysToFetch = [currentDayKey, 'selectedLot'];
+        const keysToFetch = [currentDayKey, 'selectedLot', 'parkingLots'];
         if (selectedPeriod === 'night') {
             keysToFetch.push(nextDayKey);
         }
@@ -167,55 +165,73 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentDayStats = data[currentDayKey] || {};
         const nextDayStats = data[nextDayKey] || {};
         const selectedName = data.selectedLot || "Unknown";
+        const parkingLots = data.parkingLots || [];
+
+        // Find live data
+        let liveValue = null;
+        const liveLot = parkingLots.find(p => p.name === selectedName);
+        if (liveLot) {
+            liveValue = liveLot.freeParkingNumber;
+        }
+
+        // Current time
+        const now = new Date();
+        const nowDay = now.getDay();
+        const nowHour = now.getHours();
 
         // Define hours based on period
-        let hoursMap = []; // Array of { label, hourIndex, sourceStats }
+        let hoursMap = []; // Array of { label, hour, day, stats }
         if (selectedPeriod === 'day') {
             // 08:00 to 19:00 (12 hours) from current day
             for (let h = 8; h < 20; h++) {
-                hoursMap.push({ label: `${h.toString().padStart(2, '0')}:00`, hour: h, stats: currentDayStats });
+                hoursMap.push({ label: `${h.toString().padStart(2, '0')}:00`, hour: h, day: selectedDay, stats: currentDayStats });
             }
         } else {
             // Night: 20:00 to 07:00 (12 hours)
             // 20-23 from currentDay
             for (let h = 20; h < 24; h++) {
-                hoursMap.push({ label: `${h.toString().padStart(2, '0')}:00`, hour: h, stats: currentDayStats });
+                hoursMap.push({ label: `${h.toString().padStart(2, '0')}:00`, hour: h, day: selectedDay, stats: currentDayStats });
             }
             // 00-07 from nextDay
             for (let h = 0; h < 8; h++) {
-                hoursMap.push({ label: `${h.toString().padStart(2, '0')}:00`, hour: h, stats: nextDayStats });
+                hoursMap.push({ label: `${h.toString().padStart(2, '0')}:00`, hour: h, day: nextDayIndex, stats: nextDayStats });
             }
         }
 
         const labels = hoursMap.map(hm => hm.label);
         const dataPoints = [];
+        const liveDataPoints = [];
         let hasData = false;
 
         for (const item of hoursMap) {
+            // Historical Data
             const hourSamples = item.stats[item.hour] || [];
             const lotSamples = hourSamples.filter(s => s.lotName === selectedName);
 
-            if (lotSamples.length === 0) {
-                // Determine if we push 0 or null. 
-                // Since this is sparse data, null lets chart skip. 
-                // But for "Day/Night" view, maybe 0 is interpreted as "No parking"?
-                // Let's stick to null for "No Data Recorded" to avoid confusion with "0 spaces left".
-                dataPoints.push(null);
-                continue;
-            }
-            hasData = true;
-
-            const values = lotSamples.map(s => s.spaces);
-            let val;
-            if (selectedMetric === 'max') {
-                val = Math.max(...values);
-            } else if (selectedMetric === 'min') {
-                val = Math.min(...values);
+            if (lotSamples.length > 0) {
+                hasData = true;
+                const values = lotSamples.map(s => s.spaces);
+                let val;
+                if (selectedMetric === 'max') {
+                    val = Math.max(...values);
+                } else if (selectedMetric === 'min') {
+                    val = Math.min(...values);
+                } else {
+                    const sum = values.reduce((a, b) => a + b, 0);
+                    val = Math.round(sum / values.length);
+                }
+                dataPoints.push(val);
             } else {
-                const sum = values.reduce((a, b) => a + b, 0);
-                val = Math.round(sum / values.length);
+                dataPoints.push(null);
             }
-            dataPoints.push(val);
+
+            // Live Data
+            if (item.day === nowDay && item.hour === nowHour && liveValue !== null) {
+                liveDataPoints.push(liveValue);
+                hasData = true; // Show chart even if only live data exists
+            } else {
+                liveDataPoints.push(null);
+            }
         }
 
         if (!hasData) {
@@ -244,12 +260,26 @@ document.addEventListener('DOMContentLoaded', () => {
             type: 'bar',
             data: {
                 labels: labels,
-                datasets: [{
-                    label: `Spaces (${selectedMetric})`,
-                    data: dataPoints,
-                    backgroundColor: backgroundColors,
-                    borderWidth: 1
-                }]
+                datasets: [
+                    {
+                        label: `Spaces (${selectedMetric})`,
+                        data: dataPoints,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 1,
+                        order: 2
+                    },
+                    {
+                        label: 'Live',
+                        data: liveDataPoints,
+                        backgroundColor: 'rgba(255, 105, 180, 0.5)', // Pink transparent
+                        borderColor: 'rgba(255, 105, 180, 1)',
+                        borderWidth: 1,
+                        grouped: false, // Overlay on top
+                        order: 1, // Draw last (on top)
+                        barPercentage: 1.0, // Make it wider or same? 
+                        categoryPercentage: 0.8 // Match default
+                    }
+                ]
             },
             options: {
                 responsive: true,
@@ -269,7 +299,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         text: `${selectedName} - ${daySelect.options[daySelect.selectedIndex].text} (${selectedPeriod})`
                     },
                     legend: {
-                        display: false
+                        display: true,
+                        labels: {
+                            boxWidth: 10
+                        }
                     }
                 }
             }
