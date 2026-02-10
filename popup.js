@@ -271,12 +271,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     {
                         label: 'Live',
                         data: liveDataPoints,
-                        backgroundColor: 'rgba(255, 105, 180, 0.5)', // Pink transparent
-                        borderColor: 'rgba(255, 105, 180, 1)',
-                        borderWidth: 1,
+                        backgroundColor: 'rgba(101, 66, 255, 0.5)', // Pink transparent
                         grouped: false, // Overlay on top
                         order: 1, // Draw last (on top)
-                        barPercentage: 1.0, // Make it wider or same? 
+                        barPercentage: 0.9, // Make it wider or same? 
                         categoryPercentage: 0.8 // Match default
                     }
                 ]

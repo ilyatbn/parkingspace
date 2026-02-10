@@ -125,7 +125,7 @@ async function saveHistory() {
         const dateObj = new Date(now);
         const dayOfWeek = dateObj.getDay(); // 0-6
         const hour = dateObj.getHours(); // 0-23
-        const thirtyMinutes = 30 * 60 * 1000;
+        const minutesInsertInterval = 15 * 60 * 1000;
 
         // Check if 30 minutes have passed since last save
         let shouldSave = false;
@@ -133,7 +133,7 @@ async function saveHistory() {
             shouldSave = true;
         } else {
             const timeDiff = now - data.lastSavedHistory;
-            if (timeDiff >= thirtyMinutes) {
+            if (timeDiff >= minutesInsertInterval) {
                 shouldSave = true;
             }
         }
